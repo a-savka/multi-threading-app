@@ -15,33 +15,11 @@ public class WorkerService {
 
     @PostConstruct
     public void init() {
-        Thread fetcherThread = new Thread(() -> {
-            // Mock implementation for fetching data
-            while (true) {
-                try {
-                    Thread.sleep(10000); // Simulate work
-                } catch (InterruptedException e) {
-                    Thread.currentThread().interrupt();
-                    break;
-                }
-            }
-        });
-        fetcherThread.setName("currency-data-fetcher");
+        FetcherThread fetcherThread = new FetcherThread("currency-data-fetcher");
         workers.add(new WorkerInfo(fetcherThread.getName(), LocalDateTime.now()));
         fetcherThread.start();
 
-        Thread parserThread = new Thread(() -> {
-            // Mock implementation for parsing data
-            while (true) {
-                try {
-                    Thread.sleep(10000); // Simulate work
-                } catch (InterruptedException e) {
-                    Thread.currentThread().interrupt();
-                    break;
-                }
-            }
-        });
-        parserThread.setName("currency-data-parser");
+        Thread parserThread = new Thread(new ParserThread(), "currency-data-parser");
         workers.add(new WorkerInfo(parserThread.getName(), LocalDateTime.now()));
         parserThread.start();
     }
