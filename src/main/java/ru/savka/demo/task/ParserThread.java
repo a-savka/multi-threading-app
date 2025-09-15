@@ -1,4 +1,4 @@
-package ru.savka.demo.service;
+package ru.savka.demo.task;
 
 public class ParserThread implements Runnable {
 

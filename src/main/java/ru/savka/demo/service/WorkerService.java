@@ -5,6 +5,9 @@ import ru.savka.demo.dto.WorkerInfo;
 import ru.savka.demo.model.Worker;
 
 import jakarta.annotation.PostConstruct;
+import ru.savka.demo.task.FetcherThread;
+import ru.savka.demo.task.ParserThread;
+
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;

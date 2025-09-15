@@ -45,3 +45,15 @@ http://localhost:8080/workers
     }
 ]
 ```
+
+Админка H2
+
+```
+http://localhost:8080/h2-console
+```
+
+Профилировщик
+
+```
+Visual VM
+```
