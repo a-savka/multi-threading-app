@@ -20,14 +20,14 @@ public class Webinar6Application implements CommandLineRunner {
 
     @Override
     public void run(String... args) throws Exception {
-        System.out.println("--- Running volatile demonstration ---");
+        System.out.println("--- Демонстрация работы volatile ---");
         VolatileExample volatileExample = new VolatileExample();
         volatileExample.start();
         Thread.sleep(2000);
         volatileExample.stop();
-        System.out.println("--- Volatile demonstration finished ---");
+        System.out.println("--- Демонстрация volatile завершена ---");
 
-        System.out.println("--- Running AtomicInteger demonstration ---");
+        System.out.println("--- Демонстрация работы AtomicInteger ---");
         AtomicCounter atomicCounter = new AtomicCounter();
         ExecutorService executor = Executors.newFixedThreadPool(10);
         for (int i = 0; i < 1000; i++) {
@@ -35,17 +35,22 @@ public class Webinar6Application implements CommandLineRunner {
         }
         executor.shutdown();
         executor.awaitTermination(1, TimeUnit.MINUTES);
-        System.out.println("Final count: " + atomicCounter.getValue());
-        System.out.println("--- AtomicInteger demonstration finished ---");
+        System.out.println("Итоговое значение: " + atomicCounter.getValue());
+        System.out.println("--- Демонстрация AtomicInteger завершена ---");
 
-        System.out.println("--- Running AtomicReference demonstration ---");
+        System.out.println("---\n--- Демонстрация работы AtomicReference ---");
         SingletonCache singletonCache = new SingletonCache();
         ExecutorService cacheExecutor = Executors.newFixedThreadPool(5);
         for (int i = 0; i < 10; i++) {
             cacheExecutor.submit(singletonCache::getValue);
         }
         cacheExecutor.shutdown();
-        cacheExecutor.awaitTermination(1, TimeUnit.MINUTES);
-        System.out.println("--- AtomicReference demonstration finished ---");
+        try {
+            cacheExecutor.awaitTermination(1, TimeUnit.MINUTES);
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            System.err.println("Thread interrupted during cacheExecutor termination.");
+        }
+        System.out.println("--- Демонстрация AtomicReference завершена ---");
     }
 }

@@ -8,13 +8,13 @@ public class SingletonCache {
     public String getValue() {
         String value = cache.get();
         if (value == null) {
-            String newValue = "This is the cached value";
+            String newValue = "Это кэшированное значение";
             if (cache.compareAndSet(null, newValue)) {
-                System.out.println("SingletonCache: Value was created and cached.");
+                System.out.println("SingletonCache: Значение было создано и кэшировано.");
                 return newValue;
             }
         }
-        System.out.println("SingletonCache: Value was retrieved from cache.");
+        System.out.println("SingletonCache: Значение было получено из кэша.");
         return cache.get();
     }
 }
