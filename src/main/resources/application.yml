@@ -1,0 +1,33 @@
+app:
+  supported-currencies: ["USD","EUR","GBP","JPY","GEL","TRY"]
+  api-sources:
+    - id: "exchangerateshost"
+      name: "ExchangeratesHost"
+      url: "https://www.cbr-xml-daily.ru/daily_json.js"
+      timeout-ms: 5000
+
+  fetch:
+    max-concurrent-fetchers: 5
+    fetch-interval-ms: 60000
+    api-rate-limit-per-second: 5
+    retry:
+      max-attempts: 3
+      base-backoff-ms: 500
+
+  parser:
+    max-concurrent-parsers: 3
+    polling-batch-size: 20
+
+spring:
+  datasource:
+    url: jdbc:h2:mem:fxdb;DB_CLOSE_DELAY=-1
+    driverClassName: org.h2.Driver
+    username: sa
+    password:
+  jpa:
+    hibernate:
+      ddl-auto: none
+  sql:
+    init:
+      mode: always
+      data-locations: []
