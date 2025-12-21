@@ -1,0 +1,33 @@
+syntax = "proto3";
+
+option java_multiple_files = true;
+option java_package = "ru.savka.demo.grpc";
+option java_outer_classname = "SlotProto";
+
+package demo;
+
+service SlotService {
+  rpc GetFreeSlots(GetFreeSlotsRequest) returns (GetFreeSlotsResponse);
+}
+
+message Slot {
+  int64 id = 1;
+  string date = 2;
+  string time = 3;
+  Doctor doctor = 4;
+}
+
+message Doctor {
+  int64 id = 1;
+  string full_name = 2;
+  string speciality = 3;
+  string room_number = 4;
+}
+
+message GetFreeSlotsRequest {
+  string speciality = 1;
+}
+
+message GetFreeSlotsResponse {
+  repeated Slot slots = 1;
+}
