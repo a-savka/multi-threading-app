@@ -1,19 +1,23 @@
 package ru.savka.demo.service;
 
-import ru.savka.demo.config.properties.ExternalApiProperties;
-import ru.savka.demo.repository.CurrencyRateRepository;
-import ru.savka.demo.repository.RawApiResponseRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.mockito.Answers;
 import org.mockito.Mockito;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
+import ru.savka.demo.config.properties.ExternalApiProperties;
+import ru.savka.demo.repository.CurrencyRateRepository;
+import ru.savka.demo.repository.RawApiResponseRepository;
+import ru.savka.demo.worker.ParserWorker;
 
 import java.util.concurrent.ExecutorService;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
 
 @SpringBootTest
@@ -30,20 +34,35 @@ class ParserServiceTest {
     private CurrencyRateRepository currencyRateRepository;
     @MockBean
     private LoggingService loggingService;
-    @MockBean
+    @MockBean(answer = Answers.RETURNS_DEEP_STUBS)
     private ExternalApiProperties externalApiProperties;
+    @MockBean
+    private ParserWorker parserWorker; // Mock the worker so we don't test its internals here
 
-    private ExternalApiProperties.Fetch mockFetchProperties; // Needed for fetchIntervalMs in ParserService
+    private final AtomicBoolean isParserExecutorRunning = new AtomicBoolean(false);
 
     @BeforeEach
     void setUp() {
-        // Mock ExternalApiProperties for fetchIntervalMs used in ParserService scheduler
-        mockFetchProperties = new ExternalApiProperties.Fetch();
-        mockFetchProperties.setFetchIntervalMs(100); // Short interval for testing
-        when(externalApiProperties.getFetch()).thenReturn(mockFetchProperties);
+        // Reset state
+        isParserExecutorRunning.set(false);
 
-        // Mock ThreadManagerService
-        when(threadManagerService.isParserExecutorRunning()).thenReturn(false); // Initially not running
+        // Configure deep stubs
+        when(externalApiProperties.getFetch().getFetchIntervalMs()).thenReturn(100);
+        when(externalApiProperties.getFetch().getApiRateLimitPerSecond()).thenReturn(10);
+
+        // Mock ThreadManagerService with stateful behavior
+        doAnswer(invocation -> {
+            isParserExecutorRunning.set(true);
+            return null;
+        }).when(threadManagerService).startParserExecutor();
+
+        doAnswer(invocation -> {
+            isParserExecutorRunning.set(false);
+            return null;
+        }).when(threadManagerService).stopParserExecutor();
+
+        when(threadManagerService.isParserExecutorRunning()).thenAnswer(invocation -> isParserExecutorRunning.get());
+
         ExecutorService mockExecutorService = Mockito.mock(ExecutorService.class);
         when(threadManagerService.getParserExecutor()).thenReturn(mockExecutorService);
     }
@@ -53,17 +72,19 @@ class ParserServiceTest {
         parserService.startParsing();
         verify(threadManagerService, times(1)).startParserExecutor();
         verify(loggingService, times(1)).logEvent("ParserService: Parsing started.");
-        assertTrue(threadManagerService.isParserExecutorRunning()); // Should be true after start
+        assertTrue(isParserExecutorRunning.get());
     }
 
     @Test
     void testStopParsing() {
-        // Simulate running state
-        when(threadManagerService.isParserExecutorRunning()).thenReturn(true);
+        // Simulate running state by calling start first
+        parserService.startParsing();
+        assertTrue(isParserExecutorRunning.get());
+
         parserService.stopParsing();
         verify(threadManagerService, times(1)).stopParserExecutor();
         verify(loggingService, times(1)).logEvent("ParserService: Parsing stopped.");
-        assertFalse(threadManagerService.isParserExecutorRunning()); // Should be false after stop
+        assertFalse(isParserExecutorRunning.get());
     }
 
     @Test
@@ -74,6 +95,6 @@ class ParserServiceTest {
 
         parserService.parseBatch();
 
-        verify(mockExecutorService, times(1)).submit(any(Runnable.class));
+        verify(mockExecutorService, times(1)).submit(parserWorker);
     }
 }

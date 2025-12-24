@@ -1,12 +1,13 @@
 package ru.savka.demo.service;
 
+import io.micrometer.core.instrument.MeterRegistry;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.stereotype.Service;
 import ru.savka.demo.config.properties.ExternalApiProperties;
 import ru.savka.demo.repository.CurrencyRateRepository;
 import ru.savka.demo.repository.RawApiResponseRepository;
 import ru.savka.demo.worker.ParserWorker;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.springframework.stereotype.Service;
 
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
@@ -17,23 +18,20 @@ public class ParserService {
     private static final Logger log = LoggerFactory.getLogger(ParserService.class);
 
     private final ThreadManagerService threadManagerService;
-    private final RawApiResponseRepository rawApiResponseRepository;
-    private final CurrencyRateRepository currencyRateRepository;
     private final LoggingService loggingService;
     private final ExternalApiProperties externalApiProperties;
+    private final ParserWorker parserWorker;
 
     private ScheduledExecutorService parserScheduler;
 
     public ParserService(ThreadManagerService threadManagerService,
-                         RawApiResponseRepository rawApiResponseRepository,
-                         CurrencyRateRepository currencyRateRepository,
                          LoggingService loggingService,
-                         ExternalApiProperties externalApiProperties) {
+                         ExternalApiProperties externalApiProperties,
+                         ParserWorker parserWorker) {
         this.threadManagerService = threadManagerService;
-        this.rawApiResponseRepository = rawApiResponseRepository;
-        this.currencyRateRepository = currencyRateRepository;
         this.loggingService = loggingService;
         this.externalApiProperties = externalApiProperties;
+        this.parserWorker = parserWorker;
     }
 
     public void startParsing() {
@@ -74,8 +72,7 @@ public class ParserService {
 
     public void parseBatch() {
         if (threadManagerService.isParserExecutorRunning()) {
-            threadManagerService.getParserExecutor().submit(
-                    new ParserWorker(rawApiResponseRepository, currencyRateRepository, loggingService, externalApiProperties));
+            threadManagerService.getParserExecutor().submit(parserWorker);
             log.debug("Submitted parser worker task.");
         } else {
             log.warn("Parser executor is not running, skipping parser worker task submission.");

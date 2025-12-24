@@ -11,6 +11,9 @@ import java.time.Instant;
 @NoArgsConstructor
 @AllArgsConstructor
 @Entity
+@Table(indexes = {
+        @Index(name = "idx_rawapiresponse_status_receivedat", columnList = "status, receivedAt")
+})
 public class RawApiResponse {
 
     @Id
